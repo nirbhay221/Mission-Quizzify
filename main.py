@@ -17,6 +17,3 @@ with st.form("Load Data"):
         embed_to_chroma()       # Embed and Store into VectorStore, return Vector Store
     
     st.form_submit_button("Submit")
-
-####### SCREEN 2
-# Task 3: 
