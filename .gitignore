@@ -1,4 +1,5 @@
 env/
+vvenv/
 db/
 __pycache__/
 application_key.json
