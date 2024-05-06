@@ -5,6 +5,10 @@ from langchain_core.prompts import PromptTemplate
 import os
 import sys
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 sys.path.append(os.path.abspath('tasks'))
 
 class QuizGenerator:
@@ -136,7 +140,7 @@ if __name__ == "__main__":
     
     embed_config = {
         "model_name": "textembedding-gecko@003",
-        "project": "GCP-PROJECT-ID",
+        "project": os.getenv("PROJECT_NAME"),
         "location": "us-east1"
     }
     

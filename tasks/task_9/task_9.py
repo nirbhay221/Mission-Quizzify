@@ -8,6 +8,11 @@ from task_4.task_4 import EmbeddingClient
 from task_5.task_5 import ChromaCollectionCreator
 from task_8.task_8 import QuizGenerator
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 class QuizManager:
     def __init__(self, questions: list):
         """
@@ -72,7 +77,7 @@ if __name__ == "__main__":
     
     embed_config = {
         "model_name": "textembedding-gecko@003",
-        "project": "GCP-PROJECT-ID",
+        "project": os.getenv("PROJECT_NAME"),
         "location": "us-east1"
     }
     

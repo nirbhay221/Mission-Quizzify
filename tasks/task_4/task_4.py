@@ -1,6 +1,13 @@
 # embedding_client.py
 
 from langchain_google_vertexai import VertexAIEmbeddings
+
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 class EmbeddingClient:
     """
     Task: Initialize the EmbeddingClient class to connect to Google Cloud's VertexAI for text embeddings.
@@ -44,7 +51,7 @@ class EmbeddingClient:
 
 if __name__ == "__main__":
     model_name = "textembedding-gecko@003"
-    project = "GCP-PROJECT-ID"
+    project = os.getenv("PROJECT_NAME")
     location = "us-east1"
     
     embedding_client = EmbeddingClient(model_name, project, location)

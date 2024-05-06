@@ -12,6 +12,11 @@ from langchain_core.documents import Document
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 class ChromaCollectionCreator:
     def __init__(self, processor, embed_model):
         """
@@ -82,7 +87,7 @@ if __name__ == "__main__":
     
     embed_config = {
         "model_name": "textembedding-gecko@003",
-        "project": "GCP-PROJECT-ID",
+        "project": os.getenv("PROJECT_NAME"),
         "location": "us-east1"
     }
     

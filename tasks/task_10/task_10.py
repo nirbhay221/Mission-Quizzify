@@ -9,11 +9,16 @@ from task_5.task_5 import ChromaCollectionCreator
 from task_8.task_8 import QuizGenerator
 from task_9.task_9 import QuizManager
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 if __name__ == "__main__":
     
     embed_config = {
         "model_name": "textembedding-gecko@003",
-        "project": "GCP-PROJECT-IDD",
+        "project": os.getenv("PROJECT_NAME"),
         "location": "us-central1"
     }
     # Add Session State

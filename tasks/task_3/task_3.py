@@ -7,9 +7,12 @@ import os
 import tempfile
 import sys
 import uuid
-
+import os
+from dotenv import load_dotenv
 
 print(sys.path)
+
+load_dotenv()
 class DocumentProcessor:
     
     """

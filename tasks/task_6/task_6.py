@@ -8,6 +8,11 @@ from task_3.task_3 import DocumentProcessor
 from task_4.task_4 import EmbeddingClient
 from task_5.task_5 import ChromaCollectionCreator
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 f"""
 Task: Build a Quiz Builder with Streamlit and LangChain
 
@@ -24,7 +29,7 @@ if __name__ == "__main__":
     # Configuration for EmbeddingClient
     embed_config = {
         "model_name": "textembedding-gecko@003",
-        "project": "GCP PROJECT ID",
+        "project": os.getenv("PROJECT_NAME"),
         "location": "us-east1"
     }
     

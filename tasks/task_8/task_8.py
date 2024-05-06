@@ -10,6 +10,11 @@ from task_5.task_5 import ChromaCollectionCreator
 from langchain_core.prompts import PromptTemplate
 from langchain_google_vertexai import VertexAI
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 class QuizGenerator:
     def __init__(self, topic=None, num_questions=1, vectorstore=None):
         """
@@ -172,7 +177,7 @@ if __name__ == "__main__":
     
     embed_config = {
         "model_name": "textembedding-gecko@003",
-        "project": "GCP-PROJECT-ID",
+        "project": os.getenv("PROJECT_NAME"),
         "location": "us-central1"
     }
     
