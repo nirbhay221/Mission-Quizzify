@@ -24,9 +24,9 @@ Dockerfile in the following application is designed to create a Docker image tha
 
 ## RUNNING THE APPLICATION : 
 
-docker build -t image-name .
-docker run -p 8501:8501 image-name
+- docker build -t image-name .
+- docker run -p 8501:8501 image-name
 
-Then, head to the following url to observe the Quiz generation based on the PDF and Topic Provided.
+- Then, head to the following url to observe the Quiz generation based on the PDF and Topic Provided.
 
 
