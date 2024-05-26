@@ -9,6 +9,7 @@ import sys
 import uuid
 import os
 from dotenv import load_dotenv
+from langchain_community.document_loaders.csv_loader import CSVLoader
 
 print(sys.path)
 
@@ -49,13 +50,15 @@ class DocumentProcessor:
             self.process_googleSheets()
         if input_type == "URL":
             self.process_url()
+        if input_type == "CSV":
+            self.process_csv()
         if input_type == "Notes":
             self.process_notes()
                 
     def process_pdf(self):
 
         uploaded_files = st.file_uploader(
-            label = "Streamlit Multiple PDF Uploader",
+            label = "Streamlit PDF Uploader",
             accept_multiple_files= True,
             type = ["pdf"]
         )
@@ -91,9 +94,9 @@ class DocumentProcessor:
     def process_csv(self):
 
             uploaded_files = st.file_uploader(
-                label = "Streamlit Multiple PDF Uploader",
+                label = "Streamlit CSV Uploader",
                 accept_multiple_files= True,
-                type = ["pdf"]
+                type = ["csv"]
             )
             
             if uploaded_files is not None:
@@ -111,7 +114,7 @@ class DocumentProcessor:
 
                     # Step 2: Process the temporary file
                     #####################################
-                    loader = PyPDFLoader(temp_file_path)
+                    loader = CSVLoader(temp_file_path)
                     docs = loader.load()
 
                     # Step 3: Then, Add the extracted pages to the 'pages' list.
