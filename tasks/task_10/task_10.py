@@ -31,18 +31,28 @@ if __name__ == "__main__":
             st.session_state['question_index'] = 0
         if 'display_quiz' not in st.session_state:
             st.session_state['display_quiz'] = False
-        
+        if 'input_type' not in st.session_state:
+            st.session_state['input_type'] = None
+
         screen = st.empty()
         with screen.container():
             st.header("Quiz Builder")
             
             # Create a new st.form flow control for Data Ingestion
-            with st.form("Load Data to Chroma"):
-                st.write("Select PDFs for Ingestion, the topic for the quiz, and click Generate!")
-                
-                processor = DocumentProcessor()
-                processor.ingest_documents()
+            with st.form(key = "input_form"):    
+                input_type = st.selectbox(
+                    label = "Select the type of input you want to upload",
+                    options = ["PDF","DOCX","DOC","PPT","PPTX","Google Sheets","CSV","Notes","URL"]
+                )
+                select_submit_button = st.form_submit_button(label = "Submit")
+                if select_submit_button:
+                    st.session_state['input_type'] = input_type
+                    st.rerun()
             
+            if st.session_state['input_type']:       
+                processor = DocumentProcessor()
+                processor.ingest_documents(st.session_state['input_type'])
+               
                 embed_client = EmbeddingClient(**embed_config) 
             
                 chroma_creator = ChromaCollectionCreator(processor, embed_client)
@@ -50,24 +60,24 @@ if __name__ == "__main__":
                 # Step 2: Set topic input and number of questions
                 
                 topic_input = st.text_input("Enter the Topic for the Quiz")
-                questions = st.slider("Enter the number of quetions",min_value = 1,max_value = 10,step = 1, value = 5)    
-                submitted = st.form_submit_button("Submit")
-                
-                if submitted:
-                    chroma_creator.create_chroma_collection()
+                questions = st.slider("Enter the number of questions",min_value = 1,max_value = 10,step = 1, value = 5)    
+                with st.form(key="quiz_form"):
+                    submitted_part_2 = st.form_submit_button("Submit")
+                    if submitted_part_2:
+                        chroma_creator.create_chroma_collection()
+                            
+                        if len(processor.pages) > 0:
+                            st.write(f"Generating {questions} questions for topic: {topic_input}")
                         
-                    if len(processor.pages) > 0:
-                        st.write(f"Generating {questions} questions for topic: {topic_input}")
-                    
-                    generator = QuizGenerator(topic_input, questions, chroma_creator.db)# Step 3: Initialize a QuizGenerator class using the topic, number of questrions, and the chroma collection
-                    question_bank = generator.generate_quiz()
-                    st.session_state['question_bank'] = question_bank
-                    # Step 4: Initialize the question bank list in st.session_state
-                    st.session_state["display_quiz"] = True
-                    # Step 5: Set a display_quiz flag in st.session_state to True
-                    st.session_state['question_index'] = 0
-                    # Step 6: Set the question_index to 0 in st.session_state
-                    st.rerun()
+                        generator = QuizGenerator(topic_input, questions, chroma_creator.db)# Step 3: Initialize a QuizGenerator class using the topic, number of questrions, and the chroma collection
+                        question_bank = generator.generate_quiz()
+                        st.session_state['question_bank'] = question_bank
+                        # Step 4: Initialize the question bank list in st.session_state
+                        st.session_state["display_quiz"] = True
+                        # Step 5: Set a display_quiz flag in st.session_state to True
+                        st.session_state['question_index'] = 0
+                        # Step 6: Set the question_index to 0 in st.session_state
+                        st.rerun()
 
     elif st.session_state["display_quiz"]:
         
