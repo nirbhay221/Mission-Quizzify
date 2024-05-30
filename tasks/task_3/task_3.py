@@ -152,21 +152,29 @@ class DocumentProcessor:
             first_start_time = transcript[0]['start']
             last_start_time = transcript[5]['start'] + transcript[5]['duration']
             transcript_content = ""
+            docs = []
+            
+            pages = []
+            i = 0
             for entry in transcript:
                 if entry['start'] >= first_start_time and entry['start'] <= last_start_time:
                     words = entry['text'].split()
                     formatted_text = "\\n".join(words) 
+                    metadata = {
+                        'page' : i
+                    }
                     transcript_content += formatted_text + " "
+                    docs = [Document(page_content=transcript_content,metadata=metadata)]
+                    print(docs)
+                    i +=1
+                    pages.extend(docs)
             
-            docs = [Document(page_content=transcript_content,metadata=metadata)]
-            print(docs)
             # print(video_url)
-            pages = []
             # loader = YoutubeLoader.from_youtube_url(video_url,add_video_info=True)
             # docs = loader.load()
             # print("-----------------------DOCS---------------------",docs)
             # # Add extracted pages to the 'pages' list
-            pages.extend(docs)
+            
             # Display the total number of pages processed
             st.write(f"Total pages processed: {len(pages)}")
             self.pages = pages
