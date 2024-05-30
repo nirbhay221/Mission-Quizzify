@@ -12,10 +12,20 @@ from dotenv import load_dotenv
 from langchain_community.document_loaders.csv_loader import CSVLoader
 from langchain_community.document_loaders import YoutubeLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from youtube_transcript_api import YouTubeTranscriptApi
 
 print(sys.path)
 
 load_dotenv()
+
+class Document:
+    def __init__(self, page_content='',metadata = None):
+        self.page_content = page_content
+        self.metadata = metadata if metadata is not None else {}
+        
+    def __str__(self):
+        return f"Document(page_content='{self.page_content}', metadata={self.metadata})"
+        
 class DocumentProcessor:
     
     """
@@ -82,7 +92,7 @@ class DocumentProcessor:
                 #####################################
                 loader = PyPDFLoader(temp_file_path)
                 docs = loader.load()
-
+                print("---------------DOCS-------------",docs)
                 # Step 3: Then, Add the extracted pages to the 'pages' list.
                 #####################################
                 pages.extend(docs)
@@ -134,12 +144,28 @@ class DocumentProcessor:
         
         
         if video_url:
-            print(video_url)
+            
+            video_id = video_url.split("v=")[1].split("&")[0]
+            print(f'----------------LINK ID------------{video_id}')
+            metadata = {'video_id': video_id}
+            transcript = YouTubeTranscriptApi.get_transcript(video_id)
+            first_start_time = transcript[0]['start']
+            last_start_time = transcript[5]['start'] + transcript[5]['duration']
+            transcript_content = ""
+            for entry in transcript:
+                if entry['start'] >= first_start_time and entry['start'] <= last_start_time:
+                    words = entry['text'].split()
+                    formatted_text = "\\n".join(words) 
+                    transcript_content += formatted_text + " "
+            
+            docs = [Document(page_content=transcript_content,metadata=metadata)]
+            print(docs)
+            # print(video_url)
             pages = []
-            loader = YoutubeLoader.from_youtube_url(video_url,add_video_info=True)
-            docs = loader.load()
-            print("-----------------------DOCS---------------------",docs)
-            # Add extracted pages to the 'pages' list
+            # loader = YoutubeLoader.from_youtube_url(video_url,add_video_info=True)
+            # docs = loader.load()
+            # print("-----------------------DOCS---------------------",docs)
+            # # Add extracted pages to the 'pages' list
             pages.extend(docs)
             # Display the total number of pages processed
             st.write(f"Total pages processed: {len(pages)}")
