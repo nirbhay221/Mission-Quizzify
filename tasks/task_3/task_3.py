@@ -110,8 +110,8 @@ class DocumentProcessor:
                     temp_file_name = f"{original_name}_{unique_id}{file_extension}"
                     temp_file_path = os.path.join(tempfile.gettempdir(), temp_file_name)
 
-                    # Write the uploaded PDF to a temporary file
                     with open(temp_file_path, 'wb') as f:
+                    # Write the uploaded PDF to a temporary file
                         f.write(uploaded_file.getvalue())
 
                     # Step 2: Process the temporary file
@@ -130,27 +130,21 @@ class DocumentProcessor:
                 self.pages = pages
 
     def process_url(self):
+        video_url = st.text_input("Enter Video URL", "")
+        
+        
+        if video_url:
+            print(video_url)
+            pages = []
+            loader = YoutubeLoader.from_youtube_url(video_url,add_video_info=True)
+            docs = loader.load()
+            print("-----------------------DOCS---------------------",docs)
+            # Add extracted pages to the 'pages' list
+            pages.extend(docs)
+            # Display the total number of pages processed
+            st.write(f"Total pages processed: {len(pages)}")
+            self.pages = pages
 
-                video_url = st.text_input("Enter Video URL","")
-                
-                if video_url:
-                    pages = []
-                    loader = YoutubeLoader.from_youtube_url(video_url)
-                    docs = loader.load()
-                    self.text_splitter = RecursiveCharacterTextSplitter(
-                        chunk_size = 1000, 
-                        chunk_overlap = 0
-                        )
-                    result = self.text_splitter.split_documents(docs)
-                    # Step 3: Then, Add the extracted pages to the 'pages' list.
-                    #####################################
-                    pages.extend(docs)
-                    # Clean up by deleting the temporary file.
-                    # os.unlink(temp_file_path)
-                    
-                    # Display the total number of pages processed.
-                    st.write(f"Total pages processed: {len(self.pages)}")
-                    self.pages = pages
 
 
 
