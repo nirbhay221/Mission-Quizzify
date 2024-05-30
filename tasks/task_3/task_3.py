@@ -148,16 +148,20 @@ class DocumentProcessor:
             video_id = video_url.split("v=")[1].split("&")[0]
             print(f'----------------LINK ID------------{video_id}')
             metadata = {'video_id': video_id}
+            
             transcript = YouTubeTranscriptApi.get_transcript(video_id)
-            first_start_time = transcript[0]['start']
-            last_start_time = transcript[5]['start'] + transcript[5]['duration']
+            timestamps = [entry['start'] for entry in transcript]
+            selected_timestamp = st.slider("Select Timestamp", min_value=0, max_value=len(timestamps)-1)
+            selected_entry = transcript[selected_timestamp]
+            start_time = selected_entry['start']
+            end_time = start_time + selected_entry['duration']
             transcript_content = ""
             docs = []
             
             pages = []
             i = 0
             for entry in transcript:
-                if entry['start'] >= first_start_time and entry['start'] <= last_start_time:
+                if entry['start'] >= start_time and entry['start'] <= end_time:
                     words = entry['text'].split()
                     formatted_text = "\\n".join(words) 
                     metadata = {
@@ -165,9 +169,10 @@ class DocumentProcessor:
                     }
                     transcript_content += formatted_text + " "
                     docs = [Document(page_content=transcript_content,metadata=metadata)]
-                    print(docs)
-                    i +=1
-                    pages.extend(docs)
+                    
+                    i+=1
+                    pages.append(docs)
+            print(pages)
             
             # print(video_url)
             # loader = YoutubeLoader.from_youtube_url(video_url,add_video_info=True)
