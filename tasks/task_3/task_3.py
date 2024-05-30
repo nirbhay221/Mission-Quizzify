@@ -171,7 +171,7 @@ class DocumentProcessor:
                     docs = [Document(page_content=transcript_content,metadata=metadata)]
                     
                     i+=1
-                    pages.append(docs)
+                    pages.extend(docs)
             print(pages)
             
             # print(video_url)
