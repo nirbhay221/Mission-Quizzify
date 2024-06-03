@@ -2,7 +2,7 @@
 
 # Necessary imports
 import streamlit as st
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader,Docx2txtLoader,UnstructuredPowerPointLoader, TextLoader, UnstructuredExcelLoader
 import os
 import tempfile
 import sys
@@ -53,19 +53,21 @@ class DocumentProcessor:
         if input_type == "DOCX":
             self.process_docx()
         if input_type == "DOC":
-            self.process_doc()
+            self.process_docx()
         if input_type == "PPT":
-            self.process_ppt()
+            self.process_pptx()
         if input_type == "PPTX":
             self.process_pptx()
         if input_type == "Google Sheets":
             self.process_googleSheets()
-        if input_type == "URL":
-            self.process_url()
+        if input_type == "VIDEO_URL":
+            self.process_video_url()
         if input_type == "CSV":
             self.process_csv()
-        if input_type == "Notes":
-            self.process_notes()
+        if input_type == "TXT":
+            self.process_txt()
+        if input_type == "Excel":
+            self.process_xlsx()
                 
     def process_pdf(self):
 
@@ -102,6 +104,86 @@ class DocumentProcessor:
             # Display the total number of pages processed.
             st.write(f"Total pages processed: {len(self.pages)}")
             self.pages = pages
+            
+            
+            
+    def process_xlsx(self):
+
+        uploaded_files = st.file_uploader(
+            label = "Streamlit Excel Uploader",
+            accept_multiple_files= True,
+            type = ["xslx"]
+        )
+        
+        if uploaded_files is not None:
+            pages = []
+            for uploaded_file in uploaded_files:
+                # Generate a unique identifier to append to the file's original name
+                unique_id = uuid.uuid4().hex
+                original_name, file_extension = os.path.splitext(uploaded_file.name)
+                temp_file_name = f"{original_name}_{unique_id}{file_extension}"
+                temp_file_path = os.path.join(tempfile.gettempdir(), temp_file_name)
+
+                # Write the uploaded PDF to a temporary file
+                with open(temp_file_path, 'wb') as f:
+                    f.write(uploaded_file.getvalue())
+
+                # Step 2: Process the temporary file
+                #####################################
+                loader = UnstructuredExcelLoader(temp_file_path)
+                docs = loader.load()
+                print("---------------DOCS-------------",docs)
+                # Step 3: Then, Add the extracted pages to the 'pages' list.
+                #####################################
+                pages.extend(docs)
+                # Clean up by deleting the temporary file.
+                os.unlink(temp_file_path)
+            
+            # Display the total number of pages processed.
+            st.write(f"Total pages processed: {len(self.pages)}")
+            self.pages = pages
+            
+            
+            
+            
+            
+            
+    def process_txt(self):
+
+        uploaded_files = st.file_uploader(
+            label = "Streamlit TXT Uploader",
+            accept_multiple_files= True,
+            type = ["txt"]
+        )
+        
+        if uploaded_files is not None:
+            pages = []
+            for uploaded_file in uploaded_files:
+                # Generate a unique identifier to append to the file's original name
+                unique_id = uuid.uuid4().hex
+                original_name, file_extension = os.path.splitext(uploaded_file.name)
+                temp_file_name = f"{original_name}_{unique_id}{file_extension}"
+                temp_file_path = os.path.join(tempfile.gettempdir(), temp_file_name)
+
+                # Write the uploaded PDF to a temporary file
+                with open(temp_file_path, 'wb') as f:
+                    f.write(uploaded_file.getvalue())
+
+                # Step 2: Process the temporary file
+                #####################################
+                loader = TextLoader(temp_file_path)
+                docs = loader.load()
+                print("---------------DOCS-------------",docs)
+                # Step 3: Then, Add the extracted pages to the 'pages' list.
+                #####################################
+                pages.extend(docs)
+                # Clean up by deleting the temporary file.
+                os.unlink(temp_file_path)
+            
+            # Display the total number of pages processed.
+            st.write(f"Total pages processed: {len(self.pages)}")
+            self.pages = pages
+            
 
     def process_csv(self):
 
@@ -138,8 +220,83 @@ class DocumentProcessor:
                 # Display the total number of pages processed.
                 st.write(f"Total pages processed: {len(self.pages)}")
                 self.pages = pages
+                
+    def process_docx(self):
 
-    def process_url(self):
+        uploaded_files = st.file_uploader(
+            label = "Streamlit DOCX Uploader",
+            accept_multiple_files= True,
+            type = ["docx","doc"]
+        )
+        
+        if uploaded_files is not None:
+            pages = []
+            for uploaded_file in uploaded_files:
+                # Generate a unique identifier to append to the file's original name
+                unique_id = uuid.uuid4().hex
+                original_name, file_extension = os.path.splitext(uploaded_file.name)
+                temp_file_name = f"{original_name}_{unique_id}{file_extension}"
+                temp_file_path = os.path.join(tempfile.gettempdir(), temp_file_name)
+
+                # Write the uploaded PDF to a temporary file
+                with open(temp_file_path, 'wb') as f:
+                    f.write(uploaded_file.getvalue())
+
+                # Step 2: Process the temporary file
+                #####################################
+                loader = Docx2txtLoader(temp_file_path)
+                docs = loader.load()
+                print("---------------DOCS-------------",docs)
+                # Step 3: Then, Add the extracted pages to the 'pages' list.
+                #####################################
+                pages.extend(docs)
+                # Clean up by deleting the temporary file.
+                os.unlink(temp_file_path)
+            
+            # Display the total number of pages processed.
+            st.write(f"Total pages processed: {len(self.pages)}")
+            self.pages = pages
+
+        
+    def process_pptx(self):
+
+        uploaded_files = st.file_uploader(
+            label = "Streamlit PPTX Uploader",
+            accept_multiple_files= True,
+            type = ["pptx","ppt"]
+        )
+        
+        if uploaded_files is not None:
+            pages = []
+            for uploaded_file in uploaded_files:
+                # Generate a unique identifier to append to the file's original name
+                unique_id = uuid.uuid4().hex
+                original_name, file_extension = os.path.splitext(uploaded_file.name)
+                temp_file_name = f"{original_name}_{unique_id}{file_extension}"
+                temp_file_path = os.path.join(tempfile.gettempdir(), temp_file_name)
+
+                # Write the uploaded PDF to a temporary file
+                with open(temp_file_path, 'wb') as f:
+                    f.write(uploaded_file.getvalue())
+
+                # Step 2: Process the temporary file
+                #####################################
+                loader = UnstructuredPowerPointLoader(temp_file_path)
+                docs = loader.load()
+                print("---------------DOCS-------------",docs)
+                # Step 3: Then, Add the extracted pages to the 'pages' list.
+                #####################################
+                pages.extend(docs)
+                # Clean up by deleting the temporary file.
+                os.unlink(temp_file_path)
+            
+            # Display the total number of pages processed.
+            st.write(f"Total pages processed: {len(self.pages)}")
+            self.pages = pages
+
+
+
+    def process_video_url(self):
         video_url = st.text_input("Enter Video URL", "")
         
         
