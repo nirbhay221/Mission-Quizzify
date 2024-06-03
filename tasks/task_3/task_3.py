@@ -2,7 +2,7 @@
 
 # Necessary imports
 import streamlit as st
-from langchain_community.document_loaders import PyPDFLoader,Docx2txtLoader,UnstructuredPowerPointLoader, TextLoader, UnstructuredExcelLoader
+from langchain_community.document_loaders import PyPDFLoader,Docx2txtLoader,UnstructuredPowerPointLoader, TextLoader, UnstructuredExcelLoader, WebBaseLoader
 import os
 import tempfile
 import sys
@@ -10,7 +10,7 @@ import uuid
 import os
 from dotenv import load_dotenv
 from langchain_community.document_loaders.csv_loader import CSVLoader
-from langchain_community.document_loaders import YoutubeLoader
+from langchain_community.document_loaders import YoutubeLoader,UnstructuredURLLoader,PlaywrightURLLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from youtube_transcript_api import YouTubeTranscriptApi
 
@@ -62,6 +62,8 @@ class DocumentProcessor:
             self.process_googleSheets()
         if input_type == "VIDEO_URL":
             self.process_video_url()
+        if input_type == "URL":
+            self.process_url()
         if input_type == "CSV":
             self.process_csv()
         if input_type == "TXT":
@@ -112,7 +114,7 @@ class DocumentProcessor:
         uploaded_files = st.file_uploader(
             label = "Streamlit Excel Uploader",
             accept_multiple_files= True,
-            type = ["xslx"]
+            type = ["xlsx"]
         )
         
         if uploaded_files is not None:
@@ -220,6 +222,41 @@ class DocumentProcessor:
                 # Display the total number of pages processed.
                 st.write(f"Total pages processed: {len(self.pages)}")
                 self.pages = pages
+
+
+    def process_url(self):
+            urls_input = st.text_area("Enter URLs separated by comma (,)")
+            urls = [url.strip() for url in urls_input.split(",") if url.strip()]
+            
+            if urls is not None:
+                pages = []
+                for url in urls:
+                    try:    
+                        loader = WebBaseLoader(url)
+                        loader.request_kwargs = {'verify': False}
+                        
+                        docs = loader.load()
+                    except Exception as e : 
+                        st.write(f"Web Base Loader failed for {url} with error {str(e)}")
+                        try:
+                            loader = UnstructuredURLLoader(urls = [url])
+                            docs = loader.load()
+                        except Exception as e:
+                            st.write(f"Unstructured URL Loader failed for {url} with error: {str(e)}")
+                            try:
+                                loader = PlaywrightURLLoader(urls = [url])
+                                docs = loader.load()
+                            except Exception as e:
+                                st.write(f"Unstructured URL Loader failed for {url} with error: {str(e)}")
+                                
+
+                    pages.extend(docs)
+                
+                st.write(f"Total pages processed: {len(self.pages)}")
+                self.pages = pages
+
+
+
                 
     def process_docx(self):
 

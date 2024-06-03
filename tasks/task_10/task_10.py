@@ -42,7 +42,7 @@ if __name__ == "__main__":
             with st.form(key = "input_form"):    
                 input_type = st.selectbox(
                     label = "Select the type of input you want to upload",
-                    options = ["PDF","DOCX","DOC","PPT","PPTX","Google Sheets","CSV","TXT","VIDEO_URL,UR,Excel"]
+                    options = ["PDF","DOCX","DOC","PPT","PPTX","Google Sheets","CSV","TXT","VIDEO_URL","URL","Excel"]
                 )
                 select_submit_button = st.form_submit_button(label = "Submit")
                 if select_submit_button:
