@@ -96,10 +96,23 @@ class DocumentProcessor:
                 #####################################
                 loader = PyPDFLoader(temp_file_path)
                 docs = loader.load()
-                print("---------------DOCS-------------",docs)
-                # Step 3: Then, Add the extracted pages to the 'pages' list.
-                #####################################
-                pages.extend(docs)
+                all_pages = {}
+                selected_pages = st.multiselect(
+                    f'Select pages to process from {original_name}:',
+                    options = [i for i, doc in enumerate(docs)],
+                    format_func = lambda x: f'Page {x+1}'
+                )
+                if selected_pages:
+                    selected_pages = [docs[i] for i in selected_pages]
+                    all_pages[original_name] = selected_pages
+                
+                if all_pages:
+                    self.pages = []
+                    for pdf_name, pages in all_pages.items():
+                        print("---PAGES---",pages)
+                        self.pages.extend(pages)
+                else:
+                    self.pages.extend(docs)
                 # Clean up by deleting the temporary file.
                 os.unlink(temp_file_path)
             
