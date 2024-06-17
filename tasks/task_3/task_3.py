@@ -314,33 +314,30 @@ class DocumentProcessor:
 
                 
     def process_docx(self):
-
         uploaded_files = st.file_uploader(
-            label = "Streamlit DOCX Uploader",
-            accept_multiple_files= True,
-            type = ["docx","doc"]
+            label="Streamlit DOCX Uploader",
+            accept_multiple_files=True,
+            type=["docx", "doc"]
         )
         
         if uploaded_files is not None:
             pages = []
             page_number = 1
+            
             for uploaded_file in uploaded_files:
-                # Generate a unique identifier to append to the file's original name
                 unique_id = uuid.uuid4().hex
                 original_name, file_extension = os.path.splitext(uploaded_file.name)
                 temp_file_name = f"{original_name}_{unique_id}{file_extension}"
                 temp_file_path = os.path.join(tempfile.gettempdir(), temp_file_name)
 
-                # Write the uploaded PDF to a temporary file
                 with open(temp_file_path, 'wb') as f:
                     f.write(uploaded_file.getvalue())
 
-                # Step 2: Process the temporary file
-                #####################################
                 doc = DocumentFromDocx(temp_file_path)
                 doc_text = []
                 for paragraph in doc.paragraphs:
                     doc_text.append(paragraph.text)
+                
                 current_page = []
                 word_count = 0 
                 words_per_page = 500
@@ -349,26 +346,34 @@ class DocumentProcessor:
                     current_page.append(para)
                     if word_count >= words_per_page:
                         page_content = " ".join(current_page)
-                        doc = Document(page_content,{'source':'docx','page_number':page_number})
-                        print("DOC --->",doc)
-                        pages.append(doc) 
+                        pages.append((page_content, {'source': 'docx', 'page_number': page_number}))
                         current_page = []
                         word_count = 0
                         page_number += 1
                 if current_page:
-                    pages.append(" ".join(current_page))
-                    pages.append(Document(page_content,{'source':'docx','page_number':page_number})) 
+                    page_content = " ".join(current_page)
+                    pages.append((page_content, {'source': 'docx', 'page_number': page_number}))
                     page_number += 1
-                    
-                    
                 
-                # Clean up by deleting the temporary file.
                 os.unlink(temp_file_path)
-            # Display the total number of pages processed.
-            st.write(f"Total pages processed: {len(self.pages)}")
-            self.pages = pages
-
-        
+            
+            st.write(f"Total pages processed: {len(pages)}")
+            
+            st.markdown("### Select Pages")
+            min_page = 1
+            max_page = len(pages)
+            page_range = st.slider(
+                "Select pages to keep",
+                min_value=min_page, max_value=max_page, value=(min_page, max_page)
+            )
+            
+            filtered_pages = []
+            for page_content, metadata in pages:
+                if metadata['page_number'] in range(page_range[0], page_range[1] + 1):
+                    filtered_pages.append((page_content, metadata))
+            
+            self.pages = filtered_pages
+            
     def process_pptx(self):
 
         uploaded_files = st.file_uploader(
