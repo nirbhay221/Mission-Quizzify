@@ -158,12 +158,7 @@ class DocumentProcessor:
             # Display the total number of pages processed.
             st.write(f"Total pages processed: {len(self.pages)}")
             self.pages = pages
-            
-            
-            
-            
-            
-            
+                     
     def process_txt(self):
 
         uploaded_files = st.file_uploader(
@@ -184,18 +179,23 @@ class DocumentProcessor:
                 # Write the uploaded PDF to a temporary file
                 with open(temp_file_path, 'wb') as f:
                     f.write(uploaded_file.getvalue())
-
-                # Step 2: Process the temporary file
-                #####################################
-                loader = TextLoader(temp_file_path)
-                docs = loader.load()
-                print("---------------DOCS-------------",docs)
-                # Step 3: Then, Add the extracted pages to the 'pages' list.
-                #####################################
-                pages.extend(docs)
+                with open(temp_file_path,'r') as txt_file:
+                    txt_content = txt_file.read()
+                    words_per_page = 500
+                    words = txt_content.split()
+                    num_words = len(words)
+                    num_pages = (num_words // words_per_page) + (1 if num_words % words_per_page > 0 else 0 )
+                    print("NUM PAGES ----------->",num_pages)
+                    for i in range(num_pages):
+                        start_idx = i * words_per_page
+                        end_idx = min((i+1)*words_per_page , num_words)
+                        segment_content = ' '.join(words[start_idx:end_idx])
+                        metadata = {'soure':'txt', 'file_name': uploaded_file.name, 'segment_number': i+1}
+                        pages.append((segment_content,metadata))
+                    
                 # Clean up by deleting the temporary file.
                 os.unlink(temp_file_path)
-            
+                print("---------pages----------",pages)
             # Display the total number of pages processed.
             st.write(f"Total pages processed: {len(self.pages)}")
             self.pages = pages
@@ -277,6 +277,8 @@ class DocumentProcessor:
                 # Display the total number of pages processed.
                 st.write(f"Total pages processed: {len(self.pages)}")
                 self.pages = pages
+
+
 
 
     def process_url(self):
