@@ -8,12 +8,13 @@ import tempfile
 import sys
 import uuid
 import os
+from docx import Document as DocumentFromDocx
 from dotenv import load_dotenv
 from langchain_community.document_loaders.csv_loader import CSVLoader
 from langchain_community.document_loaders import YoutubeLoader,UnstructuredURLLoader,PlaywrightURLLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from youtube_transcript_api import YouTubeTranscriptApi
-
+import pandas as pd
 print(sys.path)
 
 load_dotenv()
@@ -225,10 +226,51 @@ class DocumentProcessor:
                     #####################################
                     loader = CSVLoader(temp_file_path)
                     docs = loader.load()
+                    data =[{"content" : doc.page_content, "metadata": doc.metadata} for doc in docs]
+                    df = pd.DataFrame(data)
+                    content_df = df['content'].str.split('\n',expand = True)
+                    content_df.columns  = [f"Column {i}" for i in content_df.columns]
+                    
+                    selected_rows = st.multiselect(
+                        "Select rows to include: ",
+                        df.index,
+                        format_func = lambda x: f"Row {df.iloc[x]['metadata']['row']}"
+                    )
+                    
+                    selected_columns = st.multiselect(
+                        "Select columns to include:",
+                        content_df.columns
+                    )
+                    if not selected_rows and not selected_columns : 
+                        pages.extend(docs)
+                    elif selected_rows and not selected_columns:
+                        filtered_docs = [docs[i] for i in selected_rows]
+                        pages.extend(filtered_docs)
+                    elif selected_columns and not selected_rows:
+                        for doc in docs:
+                            content_lines = doc.page_content.split('\n')
+                            filtered_lines = [line for i, line in enumerate(content_lines) if f"Column {i}" in selected_columns]
+                            filtered_text = '\n'.join(filtered_lines)
+                            filtered_doc = {
+                                "page_content": filtered_text,
+                                "metadata": doc.metadata
+                            }
+                            pages.append(filtered_doc)
 
-                    # Step 3: Then, Add the extracted pages to the 'pages' list.
-                    #####################################
-                    pages.extend(docs)
+                    else:
+                        filtered_content = content_df.loc[selected_rows,selected_columns]
+                        for i, (_,row) in enumerate(filtered_content.iterrows()):
+                            filtered_text = '\n'.join(row.dropna())
+                            filtered_doc = {
+                                "page_content":filtered_text,
+                                "metadata": docs[i].metadata
+                            }
+                            
+                            if i in selected_rows:
+                                pages.append(filtered_doc)
+                        
+                        
+                    print("------DOCS-----",docs)
                     # Clean up by deleting the temporary file.
                     os.unlink(temp_file_path)
                 
@@ -281,6 +323,7 @@ class DocumentProcessor:
         
         if uploaded_files is not None:
             pages = []
+            page_number = 1
             for uploaded_file in uploaded_files:
                 # Generate a unique identifier to append to the file's original name
                 unique_id = uuid.uuid4().hex
@@ -294,15 +337,33 @@ class DocumentProcessor:
 
                 # Step 2: Process the temporary file
                 #####################################
-                loader = Docx2txtLoader(temp_file_path)
-                docs = loader.load()
-                print("---------------DOCS-------------",docs)
-                # Step 3: Then, Add the extracted pages to the 'pages' list.
-                #####################################
-                pages.extend(docs)
+                doc = DocumentFromDocx(temp_file_path)
+                doc_text = []
+                for paragraph in doc.paragraphs:
+                    doc_text.append(paragraph.text)
+                current_page = []
+                word_count = 0 
+                words_per_page = 500
+                for para in doc_text:
+                    word_count += len(para.split())
+                    current_page.append(para)
+                    if word_count >= words_per_page:
+                        page_content = " ".join(current_page)
+                        doc = Document(page_content,{'source':'docx','page_number':page_number})
+                        print("DOC --->",doc)
+                        pages.append(doc) 
+                        current_page = []
+                        word_count = 0
+                        page_number += 1
+                if current_page:
+                    pages.append(" ".join(current_page))
+                    pages.append(Document(page_content,{'source':'docx','page_number':page_number})) 
+                    page_number += 1
+                    
+                    
+                
                 # Clean up by deleting the temporary file.
                 os.unlink(temp_file_path)
-            
             # Display the total number of pages processed.
             st.write(f"Total pages processed: {len(self.pages)}")
             self.pages = pages
