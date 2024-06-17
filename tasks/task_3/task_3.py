@@ -176,7 +176,6 @@ class DocumentProcessor:
                 temp_file_name = f"{original_name}_{unique_id}{file_extension}"
                 temp_file_path = os.path.join(tempfile.gettempdir(), temp_file_name)
 
-                # Write the uploaded PDF to a temporary file
                 with open(temp_file_path, 'wb') as f:
                     f.write(uploaded_file.getvalue())
                 with open(temp_file_path,'r') as txt_file:
@@ -202,82 +201,84 @@ class DocumentProcessor:
             
 
     def process_csv(self):
+        uploaded_files = st.file_uploader(
+            label="Streamlit CSV Uploader",
+            accept_multiple_files=True,
+            type=["csv"]
+        )
 
-            uploaded_files = st.file_uploader(
-                label = "Streamlit CSV Uploader",
-                accept_multiple_files= True,
-                type = ["csv"]
-            )
-            
-            if uploaded_files is not None:
-                pages = []
-                for uploaded_file in uploaded_files:
-                    # Generate a unique identifier to append to the file's original name
-                    unique_id = uuid.uuid4().hex
-                    original_name, file_extension = os.path.splitext(uploaded_file.name)
-                    temp_file_name = f"{original_name}_{unique_id}{file_extension}"
-                    temp_file_path = os.path.join(tempfile.gettempdir(), temp_file_name)
+        if uploaded_files is not None:
+            pages = []
+            for uploaded_file in uploaded_files:
+                unique_id = uuid.uuid4().hex
+                original_name, file_extension = os.path.splitext(uploaded_file.name)
+                temp_file_name = f"{original_name}_{unique_id}{file_extension}"
+                temp_file_path = os.path.join(tempfile.gettempdir(), temp_file_name)
 
-                    with open(temp_file_path, 'wb') as f:
-                    # Write the uploaded PDF to a temporary file
-                        f.write(uploaded_file.getvalue())
+                with open(temp_file_path, 'wb') as f:
+                    f.write(uploaded_file.getvalue())
 
-                    # Step 2: Process the temporary file
-                    #####################################
-                    loader = CSVLoader(temp_file_path)
-                    docs = loader.load()
-                    data =[{"content" : doc.page_content, "metadata": doc.metadata} for doc in docs]
-                    df = pd.DataFrame(data)
-                    content_df = df['content'].str.split('\n',expand = True)
-                    content_df.columns  = [f"Column {i}" for i in content_df.columns]
-                    
-                    selected_rows = st.multiselect(
-                        "Select rows to include: ",
-                        df.index,
-                        format_func = lambda x: f"Row {df.iloc[x]['metadata']['row']}"
-                    )
-                    
-                    selected_columns = st.multiselect(
-                        "Select columns to include:",
-                        content_df.columns
-                    )
-                    if not selected_rows and not selected_columns : 
-                        pages.extend(docs)
-                    elif selected_rows and not selected_columns:
-                        filtered_docs = [docs[i] for i in selected_rows]
-                        pages.extend(filtered_docs)
-                    elif selected_columns and not selected_rows:
-                        for doc in docs:
-                            content_lines = doc.page_content.split('\n')
-                            filtered_lines = [line for i, line in enumerate(content_lines) if f"Column {i}" in selected_columns]
-                            filtered_text = '\n'.join(filtered_lines)
-                            filtered_doc = {
-                                "page_content": filtered_text,
-                                "metadata": doc.metadata
-                            }
-                            pages.append(filtered_doc)
-
-                    else:
-                        filtered_content = content_df.loc[selected_rows,selected_columns]
-                        for i, (_,row) in enumerate(filtered_content.iterrows()):
-                            filtered_text = '\n'.join(row.dropna())
-                            filtered_doc = {
-                                "page_content":filtered_text,
-                                "metadata": docs[i].metadata
-                            }
-                            
-                            if i in selected_rows:
-                                pages.append(filtered_doc)
-                        
-                        
-                    print("------DOCS-----",docs)
-                    # Clean up by deleting the temporary file.
-                    os.unlink(temp_file_path)
                 
-                # Display the total number of pages processed.
-                st.write(f"Total pages processed: {len(self.pages)}")
-                self.pages = pages
+                df = pd.read_csv(temp_file_path)
+                st.write("Data Preview:", df.head())
 
+                st.write("Select rows and columns to include:")
+
+                selected_rows = st.multiselect(
+                    "Select specific rows:",
+                    df.index,
+                    format_func=lambda x: f"Row {x}"
+                )
+
+                row_range = st.slider(
+                    "Select range of rows:",
+                    0, len(df) - 1, (0, len(df) - 1)
+                )
+
+                selected_columns = st.multiselect(
+                    "Select specific columns:",
+                    df.columns
+                )
+
+                col_range = st.slider(
+                    "Select range of columns:",
+                    0, len(df.columns) - 1, (0, len(df.columns) - 1)
+                )
+
+                row_start, row_end = row_range
+                col_start, col_end = col_range
+
+                if not selected_rows and not selected_columns:
+                    filtered_df = df.iloc[row_start:row_end + 1, col_start:col_end + 1]
+                elif selected_rows and not selected_columns:
+                    filtered_df = df.iloc[selected_rows, col_start:col_end + 1]
+                elif selected_columns and not selected_rows:
+                    column_names = df.columns[col_start:col_end + 1]
+                    filtered_df = df.iloc[row_start:row_end + 1, df.columns.get_indexer(selected_columns)]
+                else:
+                    column_names = df.columns[col_start:col_end + 1]
+                    selected_rows = range(row_start, row_end + 1)
+                    filtered_df = df.iloc[selected_rows, df.columns.get_indexer(selected_columns)]
+
+                st.write("Filtered Data Preview:", filtered_df)
+
+                for index, row in filtered_df.iterrows():
+                    filtered_text = row.to_string()
+                    filtered_doc = {
+                        "page_content": filtered_text,
+                        "metadata": {
+                            "row": index,
+                            "columns": list(filtered_df.columns)
+                        }
+                    }
+                    pages.append(filtered_doc)
+
+                print("------FILTERED DOCS-----", filtered_df)
+                print("---------------PAGES -------------", pages)
+                os.unlink(temp_file_path)
+
+            st.write(f"Total pages processed: {len(pages)}")
+            self.pages = pages
 
 
 
