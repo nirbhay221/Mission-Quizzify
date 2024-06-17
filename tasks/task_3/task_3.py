@@ -126,37 +126,82 @@ class DocumentProcessor:
     def process_xlsx(self):
 
         uploaded_files = st.file_uploader(
-            label = "Streamlit Excel Uploader",
-            accept_multiple_files= True,
-            type = ["xlsx"]
+            label="Streamlit XLSX Uploader",
+            accept_multiple_files=True,
+            type=["xlsx"]
         )
-        
+
         if uploaded_files is not None:
             pages = []
             for uploaded_file in uploaded_files:
-                # Generate a unique identifier to append to the file's original name
                 unique_id = uuid.uuid4().hex
                 original_name, file_extension = os.path.splitext(uploaded_file.name)
                 temp_file_name = f"{original_name}_{unique_id}{file_extension}"
                 temp_file_path = os.path.join(tempfile.gettempdir(), temp_file_name)
 
-                # Write the uploaded PDF to a temporary file
                 with open(temp_file_path, 'wb') as f:
                     f.write(uploaded_file.getvalue())
 
-                # Step 2: Process the temporary file
-                #####################################
-                loader = UnstructuredExcelLoader(temp_file_path)
-                docs = loader.load()
-                print("---------------DOCS-------------",docs)
-                # Step 3: Then, Add the extracted pages to the 'pages' list.
-                #####################################
-                pages.extend(docs)
-                # Clean up by deleting the temporary file.
+                
+                df = pd.read_excel(temp_file_path)
+                st.write("Data Preview:", df.head())
+
+                st.write("Select rows and columns to include:")
+
+                selected_rows = st.multiselect(
+                    "Select specific rows:",
+                    df.index,
+                    format_func=lambda x: f"Row {x}"
+                )
+
+                row_range = st.slider(
+                    "Select range of rows:",
+                    0, len(df) - 1, (0, len(df) - 1)
+                )
+
+                selected_columns = st.multiselect(
+                    "Select specific columns:",
+                    df.columns
+                )
+
+                col_range = st.slider(
+                    "Select range of columns:",
+                    0, len(df.columns) - 1, (0, len(df.columns) - 1)
+                )
+
+                row_start, row_end = row_range
+                col_start, col_end = col_range
+
+                if not selected_rows and not selected_columns:
+                    filtered_df = df.iloc[row_start:row_end + 1, col_start:col_end + 1]
+                elif selected_rows and not selected_columns:
+                    filtered_df = df.iloc[selected_rows, col_start:col_end + 1]
+                elif selected_columns and not selected_rows:
+                    column_names = df.columns[col_start:col_end + 1]
+                    filtered_df = df.iloc[row_start:row_end + 1, df.columns.get_indexer(selected_columns)]
+                else:
+                    column_names = df.columns[col_start:col_end + 1]
+                    selected_rows = range(row_start, row_end + 1)
+                    filtered_df = df.iloc[selected_rows, df.columns.get_indexer(selected_columns)]
+
+                st.write("Filtered Data Preview:", filtered_df)
+
+                for index, row in filtered_df.iterrows():
+                    filtered_text = row.to_string()
+                    filtered_doc = {
+                        "page_content": filtered_text,
+                        "metadata": {
+                            "row": index,
+                            "columns": list(filtered_df.columns)
+                        }
+                    }
+                    pages.append(filtered_doc)
+
+                print("------FILTERED DOCS-----", filtered_df)
+                print("---------------PAGES -------------", pages)
                 os.unlink(temp_file_path)
-            
-            # Display the total number of pages processed.
-            st.write(f"Total pages processed: {len(self.pages)}")
+
+            st.write(f"Total pages processed: {len(pages)}")
             self.pages = pages
                      
     def process_txt(self):
