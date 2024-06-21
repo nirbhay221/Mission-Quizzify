@@ -15,6 +15,7 @@ from langchain_community.document_loaders import YoutubeLoader,UnstructuredURLLo
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from youtube_transcript_api import YouTubeTranscriptApi
 import pandas as pd
+from pptx import Presentation
 print(sys.path)
 
 load_dotenv()
@@ -59,8 +60,6 @@ class DocumentProcessor:
             self.process_pptx()
         if input_type == "PPTX":
             self.process_pptx()
-        if input_type == "Google Sheets":
-            self.process_googleSheets()
         if input_type == "VIDEO_URL":
             self.process_video_url()
         if input_type == "URL":
@@ -130,7 +129,6 @@ class DocumentProcessor:
             accept_multiple_files=True,
             type=["xlsx"]
         )
-
         if uploaded_files is not None:
             pages = []
             for uploaded_file in uploaded_files:
@@ -422,44 +420,41 @@ class DocumentProcessor:
             
             self.pages = filtered_pages
             
+    
     def process_pptx(self):
-
         uploaded_files = st.file_uploader(
-            label = "Streamlit PPTX Uploader",
-            accept_multiple_files= True,
-            type = ["pptx","ppt"]
+            label="Streamlit PPTX Uploader",
+            accept_multiple_files=True,
+            type=["pptx", "ppt"]
         )
         
-        if uploaded_files is not None:
+        if uploaded_files:
             pages = []
             for uploaded_file in uploaded_files:
-                # Generate a unique identifier to append to the file's original name
                 unique_id = uuid.uuid4().hex
                 original_name, file_extension = os.path.splitext(uploaded_file.name)
                 temp_file_name = f"{original_name}_{unique_id}{file_extension}"
                 temp_file_path = os.path.join(tempfile.gettempdir(), temp_file_name)
 
-                # Write the uploaded PDF to a temporary file
                 with open(temp_file_path, 'wb') as f:
                     f.write(uploaded_file.getvalue())
 
-                # Step 2: Process the temporary file
-                #####################################
-                loader = UnstructuredPowerPointLoader(temp_file_path)
-                docs = loader.load()
-                print("---------------DOCS-------------",docs)
-                # Step 3: Then, Add the extracted pages to the 'pages' list.
-                #####################################
-                pages.extend(docs)
-                # Clean up by deleting the temporary file.
+                presentation = Presentation(temp_file_path)
+                for slide_number, slide in enumerate(presentation.slides, start=1):
+                    slide_text = []
+                    for shape in slide.shapes:
+                        if hasattr(shape, "text"):
+                            slide_text.append(shape.text)
+                    page_content = "\n".join(slide_text)
+                    docs = Document(page_content, {'source': 'pptx', 'slide_number': slide_number,'source':original_name})
+                    pages.append(docs)
+                
                 os.unlink(temp_file_path)
-            
-            # Display the total number of pages processed.
-            st.write(f"Total pages processed: {len(self.pages)}")
+
+            print("PAGES ----- >", pages)
+            st.write(f"Total slides processed: {len(pages)}")
             self.pages = pages
-
-
-
+            
     def process_video_url(self):
         video_url = st.text_input("Enter Video URL", "")
         
