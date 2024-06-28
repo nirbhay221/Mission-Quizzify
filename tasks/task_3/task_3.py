@@ -105,7 +105,8 @@ class DocumentProcessor:
                 if selected_pages:
                     selected_pages = [docs[i] for i in selected_pages]
                     all_pages[original_name] = selected_pages
-                
+                else:
+                    all_pages[original_name] = docs                
                 if all_pages:
                     self.pages = []
                     for pdf_name, pages in all_pages.items():
